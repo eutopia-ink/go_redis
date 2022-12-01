@@ -65,11 +65,8 @@ func parse0(reader io.Reader, ch chan<- *Payload) {
 			continue
 		}
 
-		// parse line
-		if !state.readingMultiLine {
-			// receive new response
-			if msg[0] == '*' {
-				// multi bulk reply
+		if !state.readingMultiLine { // 单行读取（区分字符串处理）
+			if msg[0] == '*' { // 数组(多行内容)
 				err = parseMultiBulkHeader(msg, &state)
 				if err != nil {
 					ch <- &Payload{
@@ -85,7 +82,7 @@ func parse0(reader io.Reader, ch chan<- *Payload) {
 					state = readState{} // reset state
 					continue
 				}
-			} else if msg[0] == '$' { // bulk reply
+			} else if msg[0] == '$' { // 多行字符串
 				err = parseBulkHeader(msg, &state)
 				if err != nil {
 					ch <- &Payload{
@@ -94,15 +91,14 @@ func parse0(reader io.Reader, ch chan<- *Payload) {
 					state = readState{} // reset state
 					continue
 				}
-				if state.bulkLen == -1 { // null bulk reply
+				if state.bulkLen == -1 { // 无字符串
 					ch <- &Payload{
 						Data: &reply.NullBulkReply{},
 					}
 					state = readState{} // reset state
 					continue
 				}
-			} else {
-				// single line reply
+			} else { // 单行内容
 				result, err := parseSingleLineReply(msg)
 				ch <- &Payload{
 					Data: result,
@@ -112,16 +108,17 @@ func parse0(reader io.Reader, ch chan<- *Payload) {
 				continue
 			}
 		} else {
-			// receive following bulk reply
+			// 多行读取，用于读取字符串或数组
+			// 接收单行消息并附加到state中
 			err = readBody(msg, &state)
 			if err != nil {
 				ch <- &Payload{
 					Err: errors.New("protocol error: " + string(msg)),
 				}
-				state = readState{} // reset state
+				state = readState{}
 				continue
 			}
-			// if sending finished
+			// 多行数据接收完成
 			if state.finished() {
 				var result resp.Reply
 				if state.msgType == '*' {
@@ -166,6 +163,7 @@ func readLine(bufReader *bufio.Reader, state *readState) ([]byte, bool, error) {
 	return msg, false, nil
 }
 
+// 处理多行字符串的第一行 (读取字符串总行数)
 func parseMultiBulkHeader(msg []byte, state *readState) error {
 	var err error
 	var expectedLine uint64
@@ -188,6 +186,7 @@ func parseMultiBulkHeader(msg []byte, state *readState) error {
 	}
 }
 
+// 处理字符串的第一行 (读取字符串总行数)
 func parseBulkHeader(msg []byte, state *readState) error {
 	var err error
 	state.bulkLen, err = strconv.ParseInt(string(msg[1:len(msg)-2]), 10, 64)
@@ -225,12 +224,11 @@ func parseSingleLineReply(msg []byte) (resp.Reply, error) {
 	return result, nil
 }
 
-// read the non-first lines of multi bulk reply or bulk reply
+// 读取非第一行的字符串或数组
 func readBody(msg []byte, state *readState) error {
 	line := msg[0 : len(msg)-2]
 	var err error
 	if line[0] == '$' {
-		// bulk reply
 		state.bulkLen, err = strconv.ParseInt(string(line[1:]), 10, 64)
 		if err != nil {
 			return errors.New("protocol error: " + string(msg))
