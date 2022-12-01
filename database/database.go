@@ -35,7 +35,6 @@ func (mdb *Database) Exec(c resp.Connection, cmdLine [][]byte) (result resp.Repl
 			logger.Warn(fmt.Sprintf("error occurs: %v\n%s", err, string(debug.Stack())))
 		}
 	}()
-	logger.Info("in command:", cmdLine)
 	cmdName := strings.ToLower(string(cmdLine[0]))
 	if cmdName == "select" {
 		if len(cmdLine) != 2 {

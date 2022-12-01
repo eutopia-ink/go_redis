@@ -7,13 +7,29 @@ import (
 )
 
 // GET
+func (db *DB) getAsString(key string) ([]byte, reply.ErrorReply) {
+	entity, ok := db.GetEntity(key)
+	if !ok {
+		return nil, nil
+	}
+	str, ok := entity.Data.(string)
+	bytes := []byte(str)
+	if !ok {
+		return nil, &reply.WrongTypeReply{}
+	}
+	return bytes, nil
+}
+
 func execGet(db *DB, args [][]byte) resp.Reply {
 	key := string(args[0])
-	entity, exist := db.GetEntity(key)
-	if !exist {
-		return reply.MakeNullBulkReply()
+	bytes, err := db.getAsString(key)
+	if err != nil {
+		return err
 	}
-	return reply.MakeBulkReply(entity.Data.([]byte))
+	if bytes == nil {
+		return &reply.NullBulkReply{}
+	}
+	return reply.MakeBulkReply(bytes)
 }
 
 // SET
