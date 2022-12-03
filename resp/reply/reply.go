@@ -25,7 +25,7 @@ func (b *BulkReply) ToBytes() []byte {
 	if len(b.Arg) == 0 {
 		return nullBulkBytes
 	}
-	return []byte("$" + strconv.Itoa(len(b.Arg)) + string(b.Arg) + CRLF)
+	return []byte("$" + strconv.Itoa(len(b.Arg)) + CRLF + string(b.Arg) + CRLF)
 }
 
 func MakeBulkReply(arg []byte) *BulkReply {
@@ -47,7 +47,7 @@ func (r *MultiBulkReply) ToBytes() []byte {
 		if arg == nil {
 			buf.WriteString(string(nullBulkReplyBytes) + CRLF)
 		} else {
-			buf.WriteString("$" + strconv.Itoa(len(arg)) + string(arg) + CRLF)
+			buf.WriteString("$" + strconv.Itoa(len(arg)) + CRLF + string(arg) + CRLF)
 		}
 	}
 	return buf.Bytes()
