@@ -4,7 +4,7 @@ package reply
 type PongReply struct {
 }
 
-var pongbytes = []byte("+PONG\n\n")
+var pongbytes = []byte("+PONG\r\n")
 
 func (r *PongReply) ToBytes() []byte {
 	return pongbytes
@@ -18,7 +18,7 @@ func MakePongReply() *PongReply {
 type OkReply struct {
 }
 
-var okbytes = []byte("+OK\n\n")
+var okbytes = []byte("+OK\r\n")
 
 func (r *OkReply) ToBytes() []byte {
 	return okbytes

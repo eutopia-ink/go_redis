@@ -39,6 +39,7 @@ func parse0(reader io.Reader, ch chan<- *Payload) {
 	defer func() {
 		if err := recover(); err != nil {
 			logger.Error(string(debug.Stack()))
+			logger.Error("err:", err)
 		}
 	}()
 	bufReader := bufio.NewReader(reader)
@@ -141,6 +142,7 @@ func readLine(bufReader *bufio.Reader, state *readState) ([]byte, bool, error) {
 	var err error
 	if state.bulkLen == 0 { // read normal line
 		msg, err = bufReader.ReadBytes('\n')
+
 		if err != nil {
 			return nil, true, err
 		}
